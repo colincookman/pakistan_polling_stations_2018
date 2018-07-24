@@ -113,4 +113,12 @@ constituency_summary <- ps_data %>% group_by(assembly, province, constituency_co
 
 write.csv(constituency_summary, "validity_checks/constituency_voter_reg.csv", row.names = FALSE)
 
+ps_data %>%
+  group_by(province, assembly, constituency_code) %>%
+  summarize(n = n()) %>%
+  group_by(province, assembly) %>%
+  summarize(n()) %>%
+  arrange(assembly, province) %>%
+  write.csv("validity_checks/existing_constituencies.csv", row.names = FALSE)
+
 write.csv(ps_data, "pk_polling_stations_2018.csv", row.names = FALSE)

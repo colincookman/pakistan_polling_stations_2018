@@ -7,7 +7,20 @@ In the `scrape` folder there is the script that downloaded and scraped the data 
 Please note that *this code is still a work in progress* and data outputs hosted here may be incomplete. For questions, suggestions, or to contribute, please leave an issue here or contact the contributors, Colin Cookman, Luke Sonnet, and Shahan Shahid.
 
 # Data gaps
-The biggest gap is that *many* PA constituencies seem to be missing any data whatsoever, due to the ECP not releasing data for those constituencies on their website. We are working to remedy this, but the solution is months in the making unless the ECP fixes their data.
+The biggest gap is that *many* PA constituencies seem to be missing any data whatsoever, due to the ECP not releasing data for those constituencies on their website. We are working to remedy this, but the solution is months in the making unless the ECP fixes their data. Below are the counts of constituencies they released data for:
+
+| Province    | Assembly   | N found constituencies | 
+|-------------|------------|------------------------| 
+| Balochistan | National   | 7                      | 
+| FATA        | National   | 7                      | 
+| Islamabad   | National   | 3                      | 
+| KPK         | National   | 23                     | 
+| Punjab      | National   | 114                    | 
+| Sindh       | National   | 44                     | 
+| Balochistan | Provincial | 22                     | 
+| KPK         | Provincial | 62                     | 
+| Punjab      | Provincial | 208                    | 
+| Sindh       | Provincial | 71                     | 
 
 The ECP release of GIS data for polling stations does not appear to be fully complete; [validity_checks/ps_sequence_gaps.csv](https://github.com/colincookman/pakistan_polling_stations_2018/raw/master/validity_checks/ps_sequence_gaps.csv) identifies 10384 polling station numbers missing from the available sequence, grouped by constituency. In addition to this, 4,783 polling stations did not report GIS data despite being include in the GIS dataset, and 29 reported erroneous latitude / longitude coordinates located outside of Pakistan.
 
