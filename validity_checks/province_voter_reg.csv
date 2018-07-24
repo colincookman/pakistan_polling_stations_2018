@@ -1,11 +1,11 @@
 "assembly","province","total_male_reg","total_female_reg","total_voter_reg"
-"National Assembly","Balochistan",791223,597629,1388852
-"National Assembly","FATA",732043,538130,1270173
-"National Assembly","Islamabad",407492,357953,765445
-"National Assembly","KPK",3429722,2630329,6060051
-"National Assembly","Punjab",22251725,17761977,40013702
-"National Assembly","Sindh",6547056,5237321,11784377
-"Provincial Assembly","Balochistan",959223,717158,1676381
-"Provincial Assembly","KPK",4490042,3386581,7876623
-"Provincial Assembly","Punjab",21543157,17190904,38734061
-"Provincial Assembly","Sindh",5259429,4158884,9418313
+"National","Balochistan",791223,597629,1388852
+"National","FATA",732043,538130,1270173
+"National","Islamabad",407492,357953,765445
+"National","KPK",3429722,2630329,6060051
+"National","Punjab",22251725,17761977,40013702
+"National","Sindh",6547056,5237321,11784377
+"Provincial","Balochistan",959223,717158,1676381
+"Provincial","KPK",4490042,3386581,7876623
+"Provincial","Punjab",21543157,17190904,38734061
+"Provincial","Sindh",5259429,4158884,9418313

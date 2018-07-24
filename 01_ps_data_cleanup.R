@@ -7,8 +7,8 @@ ps_data <- ps_import %>%
   mutate(
     constituency_type = recode(
       cons_type,
-      `PA` = "Provincial Assembly",
-      `NA` = "National Assembly"
+      `PA` = "Provincial",
+      `NA` = "National"
     ),
     # convert province numbers to province names
     province = recode(
@@ -57,7 +57,7 @@ ps_data <- ps_import %>%
          male_voter_reg = male_votes,
          female_voter_reg = female_voters,
          total_voter_reg = total_votes) %>%
-  select(assembly, assembly_lab, province, constituency_code, constituency_number, 
+  select(assembly, province, constituency_code, constituency_number, 
          ps_code, ps_number, ps_name, 
          male_booths, female_booths, total_booths,
          male_voter_reg, female_voter_reg, total_voter_reg, 
