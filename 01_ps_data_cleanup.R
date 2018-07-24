@@ -1,80 +1,82 @@
 library(tidyverse)
 
-ps_import <- read.csv("./data/ps_data.csv", stringsAsFactors = FALSE)
-ps_data <- ps_import
-ps_data$ps_number.1 <- NULL
+ps_import <- read.csv("scrape/scraped_ps_data.csv", stringsAsFactors = FALSE)
 
-ps_data$cons_type[ps_data$cons_type == "PA"] <- "Provincial Assembly"
-ps_data$cons_type[is.na(ps_data$cons_type)] <- "National Assembly"
+ps_data <- ps_import %>%
+  select(-ps_number.1) %>%
+  mutate(
+    constituency_type = recode(
+      cons_type,
+      `PA` = "Provincial Assembly",
+      .missing = "National Assembly"
+    ),
+    cons_type = recode(
+      cons_type,
+      .missing = "NA"
+    ),
+    # convert province numbers to province names
+    province = recode(
+      prov_number,
+      `9` = "KPK",
+      `10` = "FATA",
+      `11` = "Punjab",
+      `12` = "Sindh",
+      `13` = "Balochistan",
+      `14` = "Islamabad"
+    ),
+    # concatenate standard constituency numbers
+    constituency_code = case_when(
+      cons_type == "NA" ~ paste0("NA-", cons_number),
+      province == "KPK" & cons_type == "PA" ~ paste0("PK-", cons_number),
+      province == "Punjab" & cons_type == "PA" ~ paste0("PP-", cons_number),
+      province == "Sindh" & cons_type == "PA" ~ paste0("PS-", cons_number),
+      province == "Balochistan" & cons_type == "PA" ~ paste0("PB-", cons_number),
+      TRUE ~ NA_character_
+    ),
+    # add a polling station code
+    ps_code = paste(constituency_code, ps_number, sep = "-"),
+    # categorize PS type by PS booths
+    # ps_type = case_when(
+    #   male_booths == 0 ~ "Female PS",
+    #   female_booths == 0 ~ "Male PS",
+    #   TRUE ~ "Mixed PS"
+    # ),
+    # identify possible errors in voter booths
+    booth_errors = case_when(
+      male_votes > 0 & male_booths == 0 ~ "Male Voters No Male Booths",
+      female_voters >0 & female_booths == 0 ~ "Female Voters No Female Booths",
+      total_booths == 0 ~ "No Booths Reported"
+    ),
+    GIS_errors = case_when(
+      lat < 24 | long < 60 ~ "Lat-Lon Error",
+      lat == "" | long == "" ~ "No GIS Data Reported",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  rename(constituency_number = cons_number,
+         assembly = constituency_type,
+         assembly_lab = cons_type,
+         male_voter_reg = male_votes,
+         female_voter_reg = female_voters,
+         total_voter_reg = total_votes) %>%
+  select(assembly, assembly_lab, province, constituency_code, constituency_number, 
+         ps_code, ps_number, ps_name, 
+         male_booths, female_booths, total_booths,
+         male_voter_reg, female_voter_reg, total_voter_reg, 
+         lat, long, GIS_errors, booth_errors) %>%
+  arrange(assembly, province, constituency_number, ps_number)
 
-# convert province numbers to province names
-ps_data$prov_number[ps_data$prov_number == "9"] <- "KPK"
-ps_data$prov_number[ps_data$prov_number == "10"] <- "FATA"
-ps_data$prov_number[ps_data$prov_number == "11"] <- "Punjab"
-ps_data$prov_number[ps_data$prov_number == "12"] <- "Sindh"
-ps_data$prov_number[ps_data$prov_number == "13"] <- "Balochistan"
-ps_data$prov_number[ps_data$prov_number == "14"] <- "Islamabad"
+# ggplot(ps_data[sample(1:nrow(ps_data), size = 10000),], aes(x = long, y = lat)) +
+#   geom_point()
+sum_errors <- ps_data %>% filter((male_voter_reg + female_voter_reg) != total_voter_reg)
+#no sum errors found
 
-# concatenate standard constituency numbers
-ps_data <- ps_data %>% mutate(
-  constituency_number = paste(ps_data$cons_type, ps_data$cons_number, sep = "-")
-)
-
-ps_data$constituency_number[ps_data$prov_number == "KPK" & ps_data$cons_type == "Provincial Assembly"] <- 
-  gsub("Provincial Assembly-", "PK-", ps_data$constituency_number[ps_data$prov_number == "KPK" & ps_data$cons_type == "Provincial Assembly"])
-
-ps_data$constituency_number[ps_data$prov_number == "Punjab" & ps_data$cons_type == "Provincial Assembly"] <- 
-  gsub("Provincial Assembly-", "PP-", ps_data$constituency_number[ps_data$prov_number == "Punjab" & ps_data$cons_type == "Provincial Assembly"])
-
-ps_data$constituency_number[ps_data$prov_number == "Sindh" & ps_data$cons_type == "Provincial Assembly"] <- 
-  gsub("Provincial Assembly-", "PS-", ps_data$constituency_number[ps_data$prov_number == "Sindh" & ps_data$cons_type == "Provincial Assembly"])
-
-ps_data$constituency_number[ps_data$prov_number == "Balochistan" & ps_data$cons_type == "Provincial Assembly"] <- 
-  gsub("Provincial Assembly-", "PB-", ps_data$constituency_number[ps_data$prov_number == "Balochistan" & ps_data$cons_type == "Provincial Assembly"])
-
-ps_data$constituency_number[ps_data$cons_type == "National Assembly"] <- 
-  gsub("National Assembly-", "NA-", ps_data$constituency_number[ps_data$cons_type == "National Assembly"])
-
-# add a polling station code
-ps_data <- ps_data %>% mutate(
-  ps_code = paste(ps_data$constituency_number, ps_data$ps_number, sep = "-")
-)
-
-# sum_errors <- ps_data %>% filter((male_votes + female_voters) != total_votes)
-# no sum errors found
-
-# categorize GIS errors
-ps_data$GIS_Errors <- NA
-ps_data$GIS_Errors[ps_data$lat < 24 | ps_data$long < 60] <- "Lat-Lon Error"
-ps_data$GIS_Errors[ps_data$lat == "" | ps_data$long == ""] <- "No GIS Data Reported"
-
-ps_data <- ps_data %>% mutate(
-  lat_lon = paste(ps_data$lat, ps_data$long, sep = ", ")
-)
-ps_data$lat_lon[ps_data$lat_lon == ", "] <- NA
-
-# categorize PS type by PS booths
-ps_data$ps_type <- "Mixed PS"
-ps_data$ps_type[ps_data$male_booths == 0] <- "Female PS"
-ps_data$ps_type[ps_data$female_booths == 0] <- "Male PS"
-ps_data$ps_type[ps_data$total_booths == 0] <- "Mixed PS"
-
-# identify possible errors in voter booths
-ps_data$booth_errors <- NA
-ps_data$booth_errors[ps_data$male_votes >0 & ps_data$male_booths == 0] <- "Male Voters No Male Booths"
-ps_data$booth_errors[ps_data$female_voters >0 & ps_data$female_booths == 0] <- "Female Voters No Female Booths"
-ps_data$booth_errors[ps_data$total_booths == 0] <- "No Booths Reported"
+# ps_data <- ps_data %>% mutate(
+#   lat_lon = paste(ps_data$lat, ps_data$long, sep = ", ")
+# )
+# ps_data$lat_lon[ps_data$lat_lon == ", "] <- NA
 
 # rearrange and rename variables
-
-names(ps_data) <- c("province", "constituency_number", "assembly", "ps_number", "ps_name", "male_booths", "female_booths", "total_booths", "male_voter_reg", "female_voter_reg",
-                    "total_voter_reg", "lat", "long", "constituency_code", "ps_code", "GIS_errors", "lat_long", "ps_type", "booth_errors")
-
-ps_data <- dplyr::select(ps_data,
-                         assembly, province, constituency_code, constituency_number, ps_code, ps_number, ps_type, ps_name, male_booths, female_booths, total_booths,
-                         male_voter_reg, female_voter_reg, total_voter_reg, lat, long, lat_long, GIS_errors, booth_errors)
-
-ps_data <- dplyr::arrange(ps_data, assembly, province, constituency_number, ps_number)
 
 # identify missing polling stations in sequence
 
@@ -84,7 +86,7 @@ missing_ps <- ps_data %>%
   unnest() %>%
   mutate(ps_code = paste0(constituency_code, "-", missing_ps_number))
 
-write.csv(missing_ps, "ps_sequence_gaps.csv", row.names = FALSE)
+write.csv(missing_ps, "validity_checks/ps_sequence_gaps.csv", row.names = FALSE)
 
 
 # identify unique polling stations by coordinates
@@ -92,9 +94,9 @@ write.csv(missing_ps, "ps_sequence_gaps.csv", row.names = FALSE)
 # remove GIS errors
 unique_PS <- ps_data %>% filter(is.na(GIS_errors))
 # just the instance for each ps instance by lat/lon
-unique_PS <- unique_PS[!duplicated(unique_PS$lat_long), 1:19]
+unique_PS <- unique_PS[!duplicated(select(unique_PS, lat, long)) & !is.na(unique_PS$lat)& !is.na(unique_PS$long), ]
 
-write.csv(unique_PS, "unique_PS_coords.csv", row.names = FALSE)
+write.csv(unique_PS, "validity_checks/unique_PS_coords.csv", row.names = FALSE)
 
 # summary statistics
 province_summary <- ps_data %>% group_by(assembly, province) %>%
@@ -104,7 +106,7 @@ province_summary <- ps_data %>% group_by(assembly, province) %>%
     total_voter_reg = sum(total_voter_reg)
   )
 
-write.csv(province_summary, "province_voter_reg.csv", row.names = FALSE)
+write.csv(province_summary, "validity_checks/province_voter_reg.csv", row.names = FALSE)
 
 constituency_summary <- ps_data %>% group_by(assembly, province, constituency_code) %>%
   summarize(
@@ -113,6 +115,6 @@ constituency_summary <- ps_data %>% group_by(assembly, province, constituency_co
     total_voter_reg = sum(total_voter_reg)
   )
 
-write.csv(constituency_summary, "constituency_voter_reg.csv", row.names = FALSE)
+write.csv(constituency_summary, "validity_checks/constituency_voter_reg.csv", row.names = FALSE)
 
 write.csv(ps_data, "pk_polling_stations_2018.csv", row.names = FALSE)
