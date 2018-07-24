@@ -22,7 +22,7 @@ The biggest gap is that *many* PA constituencies seem to be missing any data wha
 | Punjab      | Provincial | 208                    | 
 | Sindh       | Provincial | 71                     | 
 
-The ECP release of GIS data for polling stations does not appear to be fully complete; [validity_checks/ps_sequence_gaps.csv](https://github.com/colincookman/pakistan_polling_stations_2018/raw/master/validity_checks/ps_sequence_gaps.csv) identifies 10384 polling station numbers missing from the available sequence, grouped by constituency. In addition to this, 4,783 polling stations did not report GIS data despite being include in the GIS dataset, and 29 reported erroneous latitude / longitude coordinates located outside of Pakistan.
+Furthermore, within constituencies there are gaps. [validity_checks/ps_sequence_gaps.csv](https://github.com/colincookman/pakistan_polling_stations_2018/raw/master/validity_checks/ps_sequence_gaps.csv) identifies 10384 polling station numbers missing from the available sequence, grouped by constituency. In addition to this, 4,783 polling stations did not report GIS data despite being include in the GIS dataset, and 29 reported erroneous latitude / longitude coordinates located outside of Pakistan.
 
 In 17 cases, male and female voters were listed as being registered despite the absence of a male/female voter booth, and in 13 cases, no booths were reported at all despite reported voter registration figures.
 
