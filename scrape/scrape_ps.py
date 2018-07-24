@@ -39,25 +39,13 @@ def download_cons(prov, const, consttype):
     return(out)
 
 
-def download_ps(url):
-    if not os.path.isfile("ps_geo/" + url + ".html"):
-        res = download_url("https://www.ecp.gov.pk//" + url, url, "ps_geo/")
-        if res == "fail":
-            return(url)
-        else:
-            return("")
-
-    else:
-        return ""
-
-
 session = requests.Session()
 #s.headers.update(headers)
 
     
-provs = {'9': 297, '11': 51, '13': 130, '12': 99}
+provs = {'11': 297, '13': 51, '12': 130, '9': 99}
 fails = []
-
+img_url = "https://www.ecp.gov.pk"
 dat = []
 for prov, max_cons in provs.iteritems():
     for i in range(max_cons):
@@ -72,8 +60,8 @@ for prov, max_cons in provs.iteritems():
                 if first:
                     first = False
                 else:
-                    dat.append([prov, str(i+1), 'PA'] + [col.text.encode('utf-8') for col in cols[0:11]])
-
+                    img_full = img_url + cols[12].find("a")['href'].encode('utf-8')
+                    dat.append([prov, str(i+1), 'PA'] + [col.text.encode('utf-8') for col in cols[0:11]] + [img_full])
 naprovs = {'9': range(1, 40), '10': range(40, 52), '14': range(52, 55), '11': range(55, 196), '12': range(196, 257), '13': range(257, 273)}
 for prov, consr in naprovs.iteritems():
     for i in consr:
@@ -88,10 +76,11 @@ for prov, consr in naprovs.iteritems():
                 if first:
                     first = False
                 else:
-                    dat.append([prov, str(i), 'NA'] + [col.text.encode('utf-8') for col in cols[0:11]])
+                    img_full = img_url + cols[12].find("a")['href'].encode('utf-8')
+                    dat.append([prov, str(i), 'NA'] + [col.text.encode('utf-8') for col in cols[0:11]] + [img_full])
 
-names = ['prov_number', 'cons_number', 'cons_type', 'ps_number', 'ps_number', 'ps_name', 'male_booths', 'female_booths', 'total_booths', 'male_votes', 'female_voters', 'total_votes', 'lat', 'long']
-with open("ps_data.csv",'wb') as of:
+names = ['prov_number', 'cons_number', 'cons_type', 'ps_number', 'ps_number', 'ps_name', 'male_booths', 'female_booths', 'total_booths', 'male_votes', 'female_voters', 'total_votes', 'lat', 'long', 'photo_url']
+with open("scraped_ps_data.csv",'wb') as of:
     wr = csv.writer(of)
     wr.writerow(names)
     wr.writerows(dat)

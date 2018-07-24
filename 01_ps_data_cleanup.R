@@ -1,6 +1,6 @@
 library(tidyverse)
 
-ps_import <- read.csv("scrape/scraped_ps_data.csv", stringsAsFactors = FALSE)
+ps_import <- read.csv("scrape/scraped_ps_data.csv", stringsAsFactors = FALSE, na.strings = "")
 
 ps_data <- ps_import %>%
   select(-ps_number.1) %>%
@@ -8,11 +8,7 @@ ps_data <- ps_import %>%
     constituency_type = recode(
       cons_type,
       `PA` = "Provincial Assembly",
-      .missing = "National Assembly"
-    ),
-    cons_type = recode(
-      cons_type,
-      .missing = "NA"
+      `NA` = "National Assembly"
     ),
     # convert province numbers to province names
     province = recode(
@@ -43,10 +39,12 @@ ps_data <- ps_import %>%
     # ),
     # identify possible errors in voter booths
     booth_errors = case_when(
+      total_booths == 0 ~ "No Booths Reported",
       male_votes > 0 & male_booths == 0 ~ "Male Voters No Male Booths",
-      female_voters >0 & female_booths == 0 ~ "Female Voters No Female Booths",
-      total_booths == 0 ~ "No Booths Reported"
+      female_voters > 0 & female_booths == 0 ~ "Female Voters No Female Booths"
     ),
+    lat = as.numeric(lat),
+    long = as.numeric(long),
     GIS_errors = case_when(
       lat < 24 | long < 60 ~ "Lat-Lon Error",
       lat == "" | long == "" ~ "No GIS Data Reported",
