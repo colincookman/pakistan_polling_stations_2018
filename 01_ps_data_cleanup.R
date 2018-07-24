@@ -46,8 +46,8 @@ ps_data <- ps_import %>%
     lat = as.numeric(lat),
     long = as.numeric(long),
     GIS_errors = case_when(
-      lat < 24 | long < 60 ~ "Lat-Lon Error",
-      lat == "" | long == "" ~ "No GIS Data Reported",
+      lat < 24 | lat > 40 | long < 60 ~ "Lat-Lon Error",
+      is.na(lat) | is.na(long) ~ "No GIS Data Reported",
       TRUE ~ NA_character_
     )
   ) %>%
@@ -64,8 +64,6 @@ ps_data <- ps_import %>%
          lat, long, GIS_errors, booth_errors) %>%
   arrange(assembly, province, constituency_number, ps_number)
 
-# ggplot(ps_data[sample(1:nrow(ps_data), size = 10000),], aes(x = long, y = lat)) +
-#   geom_point()
 sum_errors <- ps_data %>% filter((male_voter_reg + female_voter_reg) != total_voter_reg)
 #no sum errors found
 
