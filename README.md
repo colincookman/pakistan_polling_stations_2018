@@ -7,7 +7,7 @@ In the `scrape` folder there is the script that downloaded and scraped the data 
 Please note that *this code is still a work in progress* and data outputs hosted here may be incomplete. For questions, suggestions, or to contribute, please leave an issue here or contact the contributors, Colin Cookman, Luke Sonnet, and Shahan Shahid.
 
 # Data gaps
-The ECP release of GIS data for polling stations does not appear to be fully complete; [validity_checks/ps_sequence_gaps.csv](https://github.com/colincookman/pakistan_polling_stations_2018/raw/master/validity_checks/ps_sequence_gaps.csv) identifies 10384 polling station numbers missing from the available sequence, grouped by constituency. In addition to this, 4,783 polling stations did not report GIS data despite being include in the GIS dataset, and 27 reported erroneous latitude / longitude coordinates located outside of Pakistan.
+The ECP release of GIS data for polling stations does not appear to be fully complete; [validity_checks/ps_sequence_gaps.csv](https://github.com/colincookman/pakistan_polling_stations_2018/raw/master/validity_checks/ps_sequence_gaps.csv) identifies 10384 polling station numbers missing from the available sequence, grouped by constituency. In addition to this, 4,783 polling stations did not report GIS data despite being include in the GIS dataset, and 29 reported erroneous latitude / longitude coordinates located outside of Pakistan.
 
 In 17 cases, male and female voters were listed as being registered despite the absence of a male/female voter booth, and in 13 cases, no booths were reported at all despite reported voter registration figures.
 
