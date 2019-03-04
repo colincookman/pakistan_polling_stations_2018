@@ -2,6 +2,9 @@
 2018 Candidate Scrutiny Forms/
 .DS_Store
 
+# markdown used here, no native tex, so remove intermediate files
+.tex 
+
 ### R ###
 # History files
 .Rhistory
