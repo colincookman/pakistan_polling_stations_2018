@@ -1,0 +1,166 @@
+---
+title: "Second Wave of RCons Data Cleaning"
+author: "Luke Sonnet"
+date: "2019-05-07"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+```{r, results='hide'}
+library(haven)
+library(tidyverse)
+f28n <- read_dta("source_data/rcons_data/Form_28_NA_List.dta")
+f28p <- read_dta("source_data/rcons_data/Form_28_PROVINCIAL_List.dta")
+f45 <- read_dta("source_data/rcons_data/Form_45_Male_Female_Turnout.dta")
+f48 <- read_dta("source_data/rcons_data/Form_48_ResultForm.dta")
+f49 <- read_dta("source_data/rcons_data/Form_49_Candidate_List.dta")
+```
+
+# Form 28s
+
+First, I will rowbind (append) the form 28s for the PAs and the form 28s for the NAs.
+
+```{r}
+f28 <- bind_rows(
+  f28n %>% mutate(assembly = "National"), 
+  f28p %>% 
+    mutate(assembly = "Provincial") %>%
+    select(-assembly_type)
+) %>%
+  mutate(constituency_ps_id = paste0(constituency_id, "_", ps_id))
+```
+
+## Inconsistent names in form 28s
+
+RCONS FIX: There are some polling stations that have two names per polling station ID. Below I only print the few examples, but all of the errors are in "f28_ps_name_error.csv". That file and the below data has the combinations of `constituency_id` and `ps_id` that have more than one `ps_name` within the polling station ID, which should be impossible. Please check the entries for these polling stations to see what is wrong with the names. Some are clearly just typos, other's appear to be different names altogether.
+
+```{r}
+ps_name_error <- f28 %>%
+  group_by(constituency_id, ps_id, ps_name) %>%
+  summarize() %>%
+  group_by(constituency_id, ps_id) %>%
+  filter(n() > 1)
+ps_name_error
+write_csv(ps_name_error, "reports/f28_ps_name_error.csv")
+```
+
+RCONS FIX: There are some `constituency_id` files that have different `constituency_area` names. Some of these again are just typos, but others show bigger underlying problems with the data entry. Please check thoroughly and correct. This is all 10 of the errors (all the others are correct).
+
+```{r}
+electoral_name_error <- f28 %>%
+  group_by(constituency_id, constituency_area) %>%
+  summarize() %>%
+  group_by(constituency_id) %>%
+  filter(n() > 1)
+electoral_name_error
+```
+
+## Mismatch between PA and NA polling stations
+
+RCONS CHECK/FIX: There are some PA polling stations that correspond to multiple NA polling stations. Is this possible? Are there some PA polling stations that are used as multiple NA polling stations? This seems unlikely, so please check and report back. The file "f28_ps_id_mismatch.csv" has all of the PS polling stations which correspond to multiple NA polling station IDs, and I only print some examples below.
+
+```{r}
+ps_id_mismatch <- f28 %>%
+  group_by(constituency_id, ps_id, ps_id_NA) %>%
+  summarize() %>%
+  group_by(constituency_id, ps_id) %>%
+  filter(n() > 1)
+ps_id_mismatch
+write_csv(ps_id_mismatch, "reports/f28_ps_id_mismatch.csv")
+```
+
+# Form 45
+
+First, I create a combo of `constituency_id` and `ps_id` to create a unique id for the polling station constituency combo. 
+```{r}
+f45_clean <- f45 %>% 
+  mutate(constituency_ps_id = paste0(constituency_id, "_", ps_id))
+```
+
+## Extra, missing, polling station
+
+Then I show that there is one of these combos that isn't present in the form 28 data.
+
+RCONS FIX: The below polling station appears to be missing in the form 28 data. When we look at the name, I think it should just be changed to `903` from `904` but please check and correct.
+```{r}
+# There's an extra constituency_ps_id in form 45s
+setdiff(f45_clean$constituency_ps_id, f28$constituency_ps_id)
+f45_clean %>%
+  filter(constituency_ps_id == "NA21_904") %>%
+  as.data.frame()
+```
+
+```{r, include = FALSE}
+# Check one entry per PS
+table(duplicated(f45_clean$constituency_ps_id))
+```
+
+```{r, include = FALSE}
+# Check sensible max values
+f45_clean %>%
+  summarize_at(vars(ends_with("votes"), ends_with("turnout")), list(max= ~max(., na.rm = TRUE)))
+```
+
+## Mismatched totals
+
+RCONS CHECK: There are many instances with mismatched total turnout numbers, but most of these are commented by your staff as numbers that appeared incorrect in the original data. Only the two below entries have no entries for comment. Please check the source file and report back.
+
+```{r}
+f45 %>%
+  mutate_if(is.numeric, list(~ifelse(. < 0, NA, .))) %>%
+  mutate(total_turnout_sum_check = total_male_turnout + total_female_turnout) %>%
+  filter(total_turnout_sum_check != total_turnout, comments == "") %>%
+  as.data.frame()
+```
+
+# Form 48
+
+## Inconsistent data within polling stations
+
+Again, as with the Form 28s, there are some inconsistent data within polling stations.
+
+RCONS FIX: The following polling stations have different candidate names per candidate ID in the form 48 data. These are simple typos, but please correct them.
+
+```{r, warning=FALSE}
+f48 %>%
+  group_by(constituency_id) %>%
+  select(constituency_id, contains("can_name")) %>%
+  gather(variable, name, -constituency_id) %>%
+  group_by(constituency_id, variable, name) %>%
+  summarize() %>%
+  group_by(constituency_id, variable) %>%
+  filter(n() > 1)
+```
+
+RCONS FIX: there also appears to be a problem with the variables for the total number of PS for NA 83.
+
+```{r, warning=FALSE}
+f48 %>%
+  group_by(constituency_id) %>%
+  select(constituency_id, starts_with("total_number"), starts_with("registered_voters"), constituency_name) %>%
+  gather(variable, name, -constituency_id) %>%
+  group_by(constituency_id, variable, name) %>%
+  summarize() %>%
+  group_by(constituency_id, variable) %>%
+  filter(n() > 1)
+```
+
+```{r, include = FALSE}
+setdiff(paste0(f48$constituency_id, "_", f48$ps_id), f28$constituency_ps_id)
+
+
+f45_clean <- left_join(f45_clean, f48 %>% group_by(constituency_id, constituency_name) %>% summarize())
+
+f45_clean %>%
+  group_by(grepl("eshawar", constituency_name)) %>%
+  filter(is.na(total_turnout))
+  summarize
+
+```
+
+# Conclusion
+
+Once the above are fixed, it should be easy for me to merge the data confidently and to check mismatches in vote totals and names across the different datasets. Please let us know when you can check the above! Thank you.
