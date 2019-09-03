@@ -1,16 +1,120 @@
-    library(haven)
-    library(tidyverse)
-    f28n <- read_dta("source_data/rcons_data/Form_28_NA_List.dta")
-    f28p <- read_dta("source_data/rcons_data/Form_28_PROVINCIAL_List.dta")
-    f45 <- read_dta("source_data/rcons_data/Form_45_Male_Female_Turnout.dta")
-    f48 <- read_dta("source_data/rcons_data/Form_48_ResultForm.dta")
-    f49 <- read_dta("source_data/rcons_data/Form_49_Candidate_List.dta")
+Polling station level electoral returns
+---------------------------------------
 
-\*\* THIS FILE CONTAINS A TEMPORARY SKELETON FOR THE FINAL RELEASE
-DOCUMENTATION \*\*
+These data are the official form 48s (polling station level returns by
+candidate) and the unofficial form 45s, from which we collect
+preliminary gender-based turnout. This should allow for analysis of
+gender-based turnout, even in combined polling stations. Note the form
+45s uploaded by the ECP were not the final, official forms for the
+ratification of the election. Only the form 48s, which do not have
+gendered turnout, are considered official.
 
-Form 28s
---------
+Note that the release of these forms was *not* complete. Thus there is
+not complete coverage, and in some case the sum of the polling station
+totals is quite different from the reported constituency level returns.
+Furthermore, for some polling stations we only have form 45 data and for
+other polling stations we have only form 48 data (there are many missing
+form 45s).
+
+For most of the numeric variables there are three kinds of missing data:
+- `NA`, or missing data: In this case the source of the missingness is
+one of two things. For the `can_votes_*` variables these are NA if there
+was no candidate for whom votes could be entered. For example, if a
+polling station only had 20 candidates, then `can_votes_21` would be NA.
+Another source of NAs is when merging with the form 45 data. Form 48
+fields will be NA if the polling station only exists in the Form 45
+data, and the same is true in reverse. - `-99`: Data entry operator
+could not read the field, but it existed - `-88`: Data missing on hard
+copy form
+
+In some cases, some of the data differs across the two datasets. For
+that reason, and to clearly denote which form has which data, we append
+`_45` to data from the form 45s.
+
+### Wide data variables
+
+You can get the wide polling station level data in
+[data/ps\_data\_wide.csv](data/ps_data_wide.csv).
+
+-   constituency\_ps\_id: the pasted together constituency\_id and
+    ps\_id, a unique identifier of the constituency-polling station
+-   province
+-   assembly
+-   constituency\_id
+-   constituency\_name
+-   constituency\_id\_NA: the corresponding national assembly
+    constituency (for the provincial assemblies)
+-   ps\_id: the official serial number of the polling station
+-   ps\_name: the name of the polling station
+
+Some constituency level electoral data:
+
+-   constituency\_registered\_voters\_male
+-   constituency\_registered\_voters\_female
+-   constituency\_registered\_voters\_total
+-   constituency\_number\_ps\_male: number of male-only polling stations
+    in the constituency
+-   constituency\_number\_ps\_female: number of female-only polling
+    stations in the constituency
+-   constituency\_number\_ps\_combined: number of combined polling
+    stations in the constituency
+-   constituency\_number\_ps\_total: total number of polling stations in
+    the constituency
+-   n\_candidates: the number of candidate registered in this
+    constituency
+
+Polling station level voting data:
+
+-   male\_voters, female\_voters, total\_voters: the total number of
+    registered voters, merged from the form 28 polling station-electoral
+    area data
+-   invalid\_votes, valid\_votes, total\_votes: the votes cast by
+    category as recorded on the form 48s
+-   turnout: `total_votes / total_voters`, the turnout comparing the
+    registered voters on the form 28s to the number of votes on the form
+    48s
+-   ps\_valid\_votes\_summed: in most cases should be the same as
+    `valid_votes`, but this comes from summing across the candidate
+    votes (where none of them are missing), which in some cases is
+    different from `valid_votes` where there are gaps in entry.
+-   total\_male\_votes\_45, total\_female\_votes\_45, total\_votes\_45:
+    total votes cast by gender from the form 45s; these are unofficial
+    forms and may differ when summed from the `total_votes` column.
+-   male\_turnout\_45, female\_turnout\_45, turnout\_45: turnout as
+    defined by the gendered vote totals over the form 28 number of
+    registered voters of that gender
+    (e.g. `total_female_votes_45 / male_voters`)
+
+Candidate level names, vote totals, parties, and vote share:
+
+The asterices represent which candidate id (in the long version of the
+data) we are referring to, and links the columns together.
+
+-   candidate\_name\_\*
+-   candidate\_votes\_\*
+-   candidate\_party\_\*
+-   candidate\_valid\_share\_\*: This is defined as the candidate\_votes
+    over the `valid_votes` as found on the form 48s. Note there are some
+    implausible outliers due to erroneous `valid_votes` totals.
+
+Other:
+
+-   ps\_name\_45: preserved for the few mismatches in names across forms
+-   comments, comments\_45: comments by data entry operators about the
+    data quality and matches across fields
+
+TODO guess PS type (female, male, combined)
+
+### Long data variables
+
+[data/ps\_data\_long.csv](data/ps_data_long.csv)
+
+TODO document
+
+Electoral area data (Form 28s)
+------------------------------
+
+[data/electoral\_area\_ps\_data.csv](data/electoral_area_ps_data.csv)
 
 Each row in this data is unique to the combination of constituency,
 polling station, and census block, and was released by the Electoral
@@ -27,72 +131,38 @@ Assembly constituencies. While the delimitation of polling station areas
 should be identical for the two constituencies, in the data they are
 not. We report both of them here stacked together.
 
-    f28 <- bind_rows(
-      f28n %>% mutate(assembly = "National"), 
-      f28p %>% 
-        mutate(assembly = "Provincial") %>%
-        select(-assembly_type)
-    ) %>%
-      mutate(
-        constituency_ps_id = paste0(constituency_id, "_", ps_id),
-        block_code_type = case_when(
-          block_code_rural %in% c("0", "") & !(block_code_urban %in% c("0", "")) ~ "Urban",
-          !(block_code_rural %in% c("0", "")) & block_code_urban %in% c("0", "") ~ "Rural",
-          TRUE ~ "Unclear"
-        ),
-        block_code = ifelse(block_code == "0", NA, block_code)
-      ) %>%
-      select(province, assembly, constituency_id, constituency_area, ps_id, constituency_ps_id,
-             ps_name, block_code, block_code_type, name_ea_rural, name_ea_urban, everything()) %>%
-      select(-block_code_rural, -block_code_urban)
-
-    glimpse(f28)
-
-    ## Observations: 461,320
-    ## Variables: 21
-    ## $ province             <chr> "KPK", "KPK", "KPK", "KPK", "KPK", "KPK", "…
-    ## $ assembly             <chr> "National", "National", "National", "Nation…
-    ## $ constituency_id      <chr> "NA1", "NA1", "NA1", "NA1", "NA1", "NA1", "…
-    ## $ constituency_area    <chr> "NA-1 CHITRAL", "NA-1 CHITRAL", "NA-1 CHITR…
-    ## $ ps_id                <dbl> 1, 1, 2, 2, 3, 3, 4, 5, 6, 6, 6, 6, 6, 7, 7…
-    ## $ constituency_ps_id   <chr> "NA1_1", "NA1_1", "NA1_2", "NA1_2", "NA1_3"…
-    ## $ ps_name              <chr> "Govt; High School (GHS) Arrandu", "Govt; H…
-    ## $ block_code           <chr> "1010101", "1010102", "1010103", "1010104",…
-    ## $ block_code_type      <chr> "Rural", "Rural", "Rural", "Rural", "Rural"…
-    ## $ name_ea_rural        <chr> "Arrandu Khas", "Arrandu", "Arrandu Suardam…
-    ## $ name_ea_urban        <chr> "", "", "", "", "", "", "", "", "", "", "",…
-    ## $ no_voters_on_ea      <chr> "", "", "", "", "", "", "", "", "", "", "",…
-    ## $ male_voters          <dbl> 484, 252, 408, 118, 538, 115, 503, 403, 78,…
-    ## $ female_voters        <dbl> 454, 194, 314, 93, 393, 58, 412, 351, 25, 1…
-    ## $ total_voters         <dbl> 938, 446, 722, 211, 931, 173, 915, 754, 103…
-    ## $ male_booths          <dbl> 2, 2, 1, 1, 2, 2, 1, 1, 2, 2, 2, 2, 2, 1, 1…
-    ## $ female_booths        <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1…
-    ## $ total_booths         <dbl> 3, 3, 2, 2, 3, 3, 2, 2, 3, 3, 3, 3, 3, 2, 2…
-    ## $ constituency_no_NA   <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ constituency_area_NA <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ ps_id_NA             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-
-    write_csv(f28, path = "data/electoral_area_form28.csv")
-
 Variables:
 
+-   constituency\_ps\_id: *used to merge with PS level data*; the pasted
+    together constituency\_id and ps\_id, a unique identifier of the
+    constituency-polling station
+-   constituency\_ps\_id\_block\_code: The above pasted with the
+    block\_code to generate a unique identifier for each polling
+    station-census block code.
 -   province
 -   assembly
 -   constituency\_id
 -   constituency\_area
 -   ps\_id: the official serial number of the polling station
--   ps\_name: the name of the polling station
--   constituency\_ps\_id: the pasted together constituency\_id and
-    ps\_id, a unique identifier of the constituency-polling station
--   block\_code: the census block code
+-   ps\_name\_from\_form28: the name of the polling station; not always
+    consistent within `constituency_ps_id`, and may not match the
+    `ps_name` from the polling station data
+-   block\_code: the census block code; note, there are some
+    `block_code` values that have dashes in them. These seem to
+    represent more than one census block code (e.g. “332030301-06-07”
+    seems to represent “332030301”, “332030306”, and “332030307”).
+    Unfortunately this is how the census blocks were reported and we are
+    unable to figure out which voters correspond to which of the census
+    blocks. If you need help creating a full linking between polling
+    stations and each of these block codes, please leave a message.
 -   block\_code\_type: “Urban”, “Rural”, or “Unknown”
 -   name\_ea\_rural: the name of the “rural” electoral area covered by
     this polling station-census block
 -   name\_ea\_rural: the name of the “urban” electoral area covered by
     this polling station-census block
--   no\_voters\_on\_ea: sometimes, the serial number range of the voters
-    covered in this EA (per polling station) are reported. They are
-    repeated here verbatim from the forms.
+-   voter\_serials\_assigned\_to\_station: sometimes, the serial number
+    range of the voters covered in this EA (per polling station) are
+    reported. They are repeated here verbatim from the forms.
 -   male\_voters: the number of registered male voters in this polling
     station-census block
 -   female\_voters: the number of registered female voters in this
@@ -100,172 +170,11 @@ Variables:
 -   total\_voters: the number of registered voters in this polling
     station-census block
 -   male\_booths: the number of assigned male booths for this polling
-    station
+    station (Note: some errors seem to show different booths within
+    polling station id in this dataset)
 -   female\_booths: the number of assigned female booths for this
-    polling station
+    polling station (Note: some errors seem to show different booths
+    within polling station id in this dataset)
 -   total\_booths: the total number of assigned booths for this polling
-    station
--   constituency\_no\_NA: for provincial assembly polling stations, the
-    national assembly constituency number that it also serves
--   constituency\_area\_NA: for provincial assembly polling stations,
-    the national assembly constituency area that it also serves
--   ps\_id\_NA: for provincial assembly polling stations, the serial
-    number the same polling station has at the national assembly level
-
-Polling station level electoral returns
----------------------------------------
-
-Next, we have the actual polling station level electoral returns, which
-can be merged onto the above using the `constituency_ps_id` code.
-
-These data are the official form 48s (polling station level returns by
-candidate) and the unofficial form 45s, from which we collect
-preliminary gender-based turnout. This should allow for analysis of
-gender-based turnout, even in combined polling stations. Note the form
-45s uploaded by the ECP were not the final, official forms for the
-ratification of the election. Only the form 48s, which do not have
-gendered turnout, are considered official.
-
-Note that the release of these forms was *not* complete. Thus there is
-not complete coverage, and in some case the sum of the polling station
-totals is quite different from the reported constituency level returns.
-Furthermore, for some polling stations we only have form 45 data and for
-other polling stations we have only form 48 data.
-
-In some cases, some of the data differs across the two datasets. For
-that reason, and to clearly denote which form has which data, we append
-`_45` to data from the form 45s.
-
-    f48_clean <- f48 %>%
-      mutate(
-        constituency_ps_id = paste0(constituency_id, "_", ps_id)
-      ) %>%
-      select(-assembly_type)
-    f45_clean <- f45 %>%
-      mutate(
-        constituency_ps_id = paste0(constituency_id, "_", ps_id)
-      ) %>%
-      select(-assembly_type)
-    # Many missing f45s
-    length(setdiff(f48_clean$constituency_ps_id, f45_clean$constituency_ps_id))
-
-    ## [1] 116387
-
-    # Few missing f48s (for which f45s exist)
-    length(setdiff(f45_clean$constituency_ps_id, f48_clean$constituency_ps_id))
-
-    ## [1] 2229
-
-    intersect(names(f48_clean), names(f45_clean))
-
-    ## [1] "province"           "constituency_id"    "ps_id"             
-    ## [4] "ps_name"            "total_votes"        "comments"          
-    ## [7] "constituency_ps_id"
-
-    sanity_check <- full_join(
-      f48_clean, 
-      f45_clean,
-      by = "constituency_ps_id"
-    )
-    # Sanity checks
-    table(sanity_check$province.x == sanity_check$province.y)
-
-    ## 
-    ##  TRUE 
-    ## 39727
-
-    table(sanity_check$ps_name.x == sanity_check$ps_name.y)
-
-    ## 
-    ## FALSE  TRUE 
-    ##   537 39190
-
-    table(sanity_check$total_votes.x == sanity_check$total_votes.y)
-
-    ## 
-    ## FALSE  TRUE 
-    ##     3 39666
-
-    # Final merge
-    ps_dat <- full_join(
-      f48_clean, 
-      f45_clean %>% 
-        select(-constituency_id, -ps_id) %>%
-        rename_at(vars(-constituency_ps_id), list(~paste0(., "_45"))),
-      by = "constituency_ps_id"
-    ) %>%
-      mutate(
-        province = ifelse(is.na(province), province_45, province),
-        assembly = ifelse(grepl("^NA", constituency_id), "National", "Provincial")
-      ) %>%
-      rename_at(
-        vars(registered_voters_male, registered_voters_female, registered_voters_total),
-        list(~paste0("constituency_", .))
-      ) %>%
-      rename_at(
-        vars(starts_with("total_number_ps")),
-        list(~gsub("^total", "constituency", .))
-      ) %>%
-      rename(constituency_id_NA = constituency_no_NA) %>%
-      select(province, assembly, constituency_id, constituency_name, ps_id, ps_name, everything())
-
-    # TODO: clean negative values
-    # TODO: merge in registered voter totals from form 28s
-    # TODO: compute gendered and overall turnout values
-    # TODO: create long version of data and merge with form 49s
-
--   province
--   assembly
--   constituency\_id
--   constituency\_name
--   constituency\_no\_NA: the corresponding national assembly
-    constituency
--   constituency\_ps\_id: the pasted together constituency\_id and
-    ps\_id, a unique identifier of the constituency-polling station
-
-Some constituency level electoral data:
-
--   constituency\_registered\_voters\_male
-
--   constituency\_registered\_voters\_female
-
--   constituency\_registered\_voters\_total
-
--   constituency\_number\_ps\_male: number of male-only polling stations
-    in the constituency
-
--   constituency\_number\_ps\_female: number of female-only polling
-    stations in the constituency
-
--   constituency\_number\_ps\_combined: number of combined polling
-    stations in the constituency
-
--   constituency\_number\_ps\_total: total number of polling stations in
-    the constituency
-
--   ps\_id: the official serial number of the polling station
-
--   ps\_name: the name of the polling station
-
-Candidate level names and vote totals:
-
--   can\_name\_\*
--   can\_votes\_\*
-
-To match candidates to more, see the long version of the data and the
-form 49s below.
-
-Form 45 data:
-
--   ps\_name\_45: preserved for the few mismatches in names across forms
-
--   total\_votes\_45, total\_turnout\_45: supposedly both the same
-    number, reported separately on the forms
-
--   total\_female\_turnout\_45: the reported number of women who turned
-    out; 0 =
-
--   total\_male\_turnout\_45: the reported number of men who turned out
-
--   comments, comments\_45: comments by data entry operators about the
-    data quality and matches across fields
+    station (Note: some errors seem to show different booths within
+    polling station id in this dataset)
