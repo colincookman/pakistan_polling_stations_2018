@@ -1,0 +1,86 @@
+---
+title: "2018 Pakistani General Election: polling station long data codebook"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# Note, must be evaluated locally, not at project level
+library(readr)
+library(codebook)
+
+knitr::opts_chunk$set(
+  echo = FALSE, 
+  fig.width = 4, 
+  fig.height = 4, 
+  fig.align = "center", 
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+## [Current .csv file](https://osf.io/2sdzg/download) - v0.1
+
+### Changelog
+
+* [v0.1](https://osf.io/2sdzg/download)
+  * First public release
+
+### Citation
+
+Sonnet, Luke. 2019. “2018 Pakistani General Election Polling Station Data.” https://doi.org/10.17605/osf.io/mtsnd.
+
+```{r}
+ps_data_long <- read_csv("../data/ps_data_long.csv")
+
+metadata(ps_data_long)$name <- "2018 Pakistani General Elections Polling Station Level Data (long)"
+metadata(ps_data_long)$description <- paste0('
+### Overview
+
+These data are the official form 48s (polling station level returns by candidate), and are a reshaped version of the wide polling station data. They are made long so that each row is a polling station-candidate. For more thorough documentation of the data, please see the wide data page.
+
+### Variable summary
+
+Identifiers:
+
+* constituency_id
+* constituency_ps_id: the pasted together constituency_id and ps_id, a unique identifier of the constituency-polling station
+
+Polling station level data:
+
+* ps_total_votes: reported number of invalid and valid votes on form 48
+* ps_invalid_votes: reported number of invalid votes on form 48
+* ps_valid_votes: reported number of valid votes on form 48
+* ps_valid_votes_summed: the summed number of `candidate_votes` in the polling station. This may differ from `ps_valid_votes` if there are errors in any of the candidate totals or in the `ps_valid_votes` field
+
+Candidate level data:
+
+* candidate_id: id number, unique to the consituency, that matches the column number in the wide data
+* candidate_name
+* candidate_party
+* candidate_votes: the number of valid votes cast for this candidate at this polling station
+* candidate_valid_share: the candidates vote share of the reported total number of polling station valid votes (`candidate_votes / ps_valid_votes`)
+* candidate_valid_share_of_summed: the candidates vote share of the summed candidate-level valid votes (`candidate_votes / ps_valid_votes_summed`)
+
+Other data:
+
+* candidate_total_valid_votes_summed: the constituency-level sum of `candidate_votes` for a candidate 
+* candidate_total_valid_votes_polled_49: the constituency-level total votes polled by this candidate as reported on the constituency-level form 49s. This may differ from `candidate_total_valid_votes_summed` if some polling stations are missing or there are errors in any of the polling station level candidate vote totals.
+
+* n_candidates: the number of candidates competing in the constituency
+')
+metadata(ps_data_long)$identifier <- "https://osf.io/mtsnd/"
+metadata(ps_data_long)$datePublished <- "2019-10-21"
+metadata(ps_data_long)$creator <- list(
+  "@type" = "Person",
+  givenName = "Luke", familyName = "Sonnet",
+  email = "luke.sonnet@gmail.com"
+)
+metadata(ps_data_long)$citation <- "Sonnet, Luke. 2019. “2018 Pakistani General Election Polling Station Data.” https://doi.org/10.17605/osf.io/mtsnd."
+metadata(ps_data_long)$url <- "https://osf.io/mtsnd/"
+```
+
+## Automatically generated codebook
+
+```{r}
+codebook(ps_data_long, indent = "##", missingness_report = FALSE)
+```

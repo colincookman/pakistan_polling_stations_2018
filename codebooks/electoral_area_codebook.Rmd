@@ -1,0 +1,91 @@
+---
+title: "2018 Pakistani General Election: electoral area (census block) data codebook"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+library(readr)
+library(codebook)
+
+knitr::opts_chunk$set(
+  echo = FALSE, 
+  fig.width = 4, 
+  fig.height = 4, 
+  fig.align = "center", 
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+## [Current .csv file](https://osf.io/kmfh6/download) - v0.1
+
+### Changelog
+
+* [v0.1](https://osf.io/kmfh6/download) 
+  * First public release
+
+### Citation
+
+Sonnet, Luke. 2019. “2018 Pakistani General Election Polling Station Data.” https://doi.org/10.17605/osf.io/mtsnd.
+
+```{r}
+ea_wide <- read_csv("../data/electoral_area_ps_data.csv")
+non_na_block_codes <- sum(!is.na(ea_wide$block_code))
+dashed_block_codes <- sum(grepl("\\-", ea_wide$block_code))
+```
+
+```{r}
+metadata(ea_wide)$name <- "2018 Pakistani General Elections Electoral Area and Census Block data"
+metadata(ea_wide)$description <- paste0('
+### Overview
+
+Each row in this data is unique to the combination of constituency, polling station, and census block, and was released by the Electoral Commission of Pakistan as Form 28.
+
+Some polling station areas include several census blocks, and several census blocks are across several polling stations. The mapping of polling station to census block is many-to-many; this means that the same polling Furthermore, female and male only polling stations can have different mappings from polling station to census block.
+
+The ECP released Form 28s separately for the National and Provincial Assembly constituencies. While the delimitation of polling station areas should be identical for the two constituencies, in the data they are not. We report both of them here stacked together.
+
+Note: ', dashed_block_codes, ' of the ', non_na_block_codes, ' non-missing block codes actually represent several census blocks. As such, the `block_code` field is a string. For these rows, the `block_code` field usually has a few block codes pasted together. However, splitting the rows that represent multiple census blocks is difficult, as it is unclear how to divide the voters and booths across census blocks.
+
+While this only affects a small percentage of rows, it could prevent a challenge for those polling stations. If you are having difficulties with this, please leave an issue or email [Luke Sonnet](lukesonnet.com).
+
+### Variable summary
+
+Throughout, a value of `-88` denotes that the data should have been reported but was missing on the forms, either due to a scanning error or some other ommission.  Please check the variable distributions before using this data.
+
+* constituency_ps_id: *this is used to merge with PS level data*; the pasted together constituency_id and ps_id, a unique identifier of the constituency-polling station
+* constituency_ps_id_block_code: `constituency_ps_id` pasted with the block_code to generate a unique identifier for each polling station-census block code.
+* province
+* assembly
+* constituency_id
+* constituency_area
+* ps_id: the official serial number of the polling station
+* ps_name_from_form28: the name of the polling station; not always consistent within `constituency_ps_id`, and may not match the `ps_name` from the polling station data
+* block_code: the census block code; note, there are some `block_code` values that have dashes in them. These seem to represent more than one census block code (e.g. "332030301-06-07" seems to represent "332030301", "332030306", and "332030307"). Unfortunately this is how the census blocks were reported and we are unable to figure out which voters correspond to which of the census blocks. If you need help creating a full linking between polling stations and each of these block codes, please leave a message.
+* block_code_type: "Urban", "Rural", or "Unknown"
+* name_ea_rural: the name of the "rural" electoral area covered by this polling station-census block
+* name_ea_rural: the name of the "urban" electoral area covered by this polling station-census block
+* voter_serials_assigned_to_station: sometimes, the serial number range of the voters covered in this EA (per polling station) are reported. They are repeated here verbatim from the forms.
+* male_voters: the number of registered male voters in this polling station-census block
+* female_voters: the number of registered female voters in this polling station-census block
+* total_voters: the number of registered voters in this polling station-census block
+* male_booths: the number of assigned male booths for this polling station (Note: some errors seem to show different booths within polling station id in this dataset)
+* female_booths: the number of assigned female booths for this polling station (Note: some errors seem to show different booths within polling station id in this dataset)
+* total_booths: the total number of assigned booths for this polling station (Note: some errors seem to show different booths within polling station id in this dataset)
+')
+metadata(ea_wide)$identifier <- "https://osf.io/mtsnd/"
+metadata(ea_wide)$datePublished <- "2019-10-21"
+metadata(ea_wide)$creator <- list(
+  "@type" = "Person",
+  givenName = "Luke", familyName = "Sonnet",
+  email = "luke.sonnet@gmail.com"
+)
+metadata(ea_wide)$citation <- "Sonnet, Luke. 2019. “2018 Pakistani General Election Polling Station Data.” https://doi.org/10.17605/osf.io/mtsnd."
+metadata(ea_wide)$url <- "https://osf.io/mtsnd/"
+```
+
+
+```{r}
+codebook(ea_wide, indent = "##", missingness_report = FALSE)
+```

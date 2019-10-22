@@ -1,0 +1,404 @@
+---
+title: "Cleaning RCons Data"
+output: md_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+```
+
+This file cleans the RCons data for publication.
+
+```{r, results='hide', eval=TRUE, echo=F}
+library(haven)
+library(tidyverse)
+f28n <- read_dta("source_data/rcons_data/Form_28_NA_List.dta")
+f28p <- read_dta("source_data/rcons_data/Form_28_PROVINCIAL_List.dta")
+f45 <- read_dta("source_data/rcons_data/Form_45_Male_Female_Turnout.dta")
+f48 <- read_dta("source_data/rcons_data/Form_48_ResultForm.dta")
+f49 <- read_dta("source_data/rcons_data/Form_49_Candidate_List.dta")
+```
+
+```{r}
+# Form 28 data
+f28 <- bind_rows(
+  f28n %>% mutate(assembly = "National"), 
+  f28p %>% 
+    mutate(assembly = "Provincial") %>%
+    select(-assembly_type)
+) %>%
+  mutate(
+    block_code = ifelse(block_code %in% c("-88", "0"), NA, block_code),
+    constituency_ps_id = paste0(constituency_id, "_", ps_id),
+    block_code_type = case_when(
+      block_code_rural %in% c("0", "") & !(block_code_urban %in% c("0", "")) ~ "Urban",
+      !(block_code_rural %in% c("0", "")) & block_code_urban %in% c("0", "") ~ "Rural",
+      TRUE ~ "Unclear"
+    ),
+    # Fix obvious typos in inconsistent polling station names
+    ps_name_from_form28 = case_when(
+      constituency_ps_id == "PB17_10" & ps_name == "(2) LIBRARY HALL MACH (MALE)" ~ "LIBRARY HALL MACH (MALE)",
+      constituency_ps_id %in% c("PB17_28", "PB17_29") & ps_name == "GOVT BOYS HIGH SCHOOL RIND ALI (MALE)" ~ "2 GOVT HIGH SCHOOL RIND ALI MALE",
+      constituency_ps_id == "PB17_62" & ps_name == "BOYS P/S KHARA COMBINED" ~ "BOYS H/S BHERI COMBINED",
+      TRUE ~ ps_name
+    ),
+    # Note: there remain some inconsistencies that it is unclear how to solve
+    # When possible, prefer PS names from ps data
+    
+    # Create unique code
+    constituency_ps_id_block_code = paste0(constituency_ps_id, "_", block_code),
+    
+    # Fix female and male NAs when it's very likely they should be 0
+    female_voters = case_when(
+      is.na(female_voters) & male_voters > 0 & male_booths > 0 & female_booths == 0 ~ 0,
+      female_voters < 0 ~ NA_real_,
+      TRUE ~ female_voters
+    ),
+    male_voters = case_when(
+      is.na(male_voters) & female_voters > 0 & female_booths > 0 & male_booths == 0 ~ 0,
+      male_voters < 0 ~ NA_real_,
+      TRUE ~ male_voters
+    ),
+    # Fix unnecessary errors in total_voters and make safe assumptions about when
+    # Female and male voters are missing and total should be present
+    total_voters = case_when(
+      total_voters < 0 ~ NA_real_,
+      is.na(total_voters) & male_voters >= 0  & female_voters >= 0 | constituency_ps_id == "NA27_153" ~ male_voters + female_voters,
+      total_voters == 0 & is.na(male_voters) & is.na(female_voters) ~ NA_real_,
+      TRUE ~ total_voters
+    )
+  ) %>%
+  rename(voter_serials_assigned_to_station = no_voters_on_ea) %>%
+  # mutate_at(
+  #   vars(ends_with("_booths"), ends_with("_voters")),
+  #   list(
+  #     ~case_when(
+  #       is.na(.) ~electoral_area_ps_data.csv -88,
+  #       . == -77 ~ -88,
+  #       TRUE ~ .
+  #     )
+  #   )
+  # ) %>%
+  select(constituency_ps_id_block_code, constituency_ps_id, province, assembly, constituency_id, constituency_area, ps_id,
+         ps_name_from_form28, block_code, block_code_type, name_ea_rural, name_ea_urban, everything()) %>%
+  select(-block_code_rural, -block_code_urban, -constituency_no_NA, -constituency_area_NA, -ps_id_NA, -ps_name) %>%
+  mutate_at(
+    vars(ends_with("_voters")),
+    as.integer
+  )
+
+# Demonstrate that booths are not always fixed within polling station
+# ps_booths <- f28 %>% 
+#   group_by(constituency_ps_id) %>%
+#   summarize_at(vars(ends_with("_booths")), list(unique=~length(unique(.)))) %>%
+#   filter_at(vars(ends_with("_booths")), any_vars(. != 1))
+
+# Some inconsistent names within constituency_ps_id
+# ps_names <- f28 %>% 
+#   group_by(constituency_ps_id) %>%
+#   summarize(n_ps_names = length(unique(ps_name_from_form28))) %>%
+#   filter(n_ps_names != 1)
+# f28 %>% 
+#   left_join(ps_names) %>%
+#   filter(!is.na(n_ps_names)) %>%
+#   select(constituency_ps_id, ps_name_from_form28, name_ea_rural, name_ea_urban) %>%
+#   as.data.frame
+
+# Check values on voters and booths
+# f28 %>%
+#   filter_at(vars(ends_with("voters"), ends_with("booths")), any_vars(. < 0 | is.na(.))) %>%
+#   head() %>% as.data.frame
+# filter(f28, is.na(female_booths)) %>% as.data.frame
+# 
+# table(f28$male_booths, f28$female_booths, useNA = "a")
+# table(f28$total_booths, useNA = "a")
+# 
+# f28 %>%
+#   mutate_at(vars(ends_with("voters")), list(~case_when(. > 0 ~ 1, TRUE ~ .))) %>%
+#   with(., table(male_voters, female_voters, total_voters, useNA = "a"))
+# 
+# f28 %>%
+#   filter(total_voters == 0, male_voters > 0 | is.na(female_voters)) %>%
+#   as.data.frame()
+# 
+# f28 %>%
+#   filter(total_voters > 0, male_voters == 0, female_voters == 0) %>%
+#   as.data.frame()
+
+# f28 %>%
+#   filter(total_voters < 0 | is.na(total_voters)) %>%
+#   as.data.frame()
+
+# put the text block_codes and voter serials first so readr guesses character
+write_csv(f28 %>% arrange(desc(constituency_id == "NA204" | grepl("[a-z]", voter_serials_assigned_to_station))), path = "data/electoral_area_ps_data.csv")
+
+f28_ps_level <- f28 %>%
+  group_by(constituency_ps_id) %>%
+  summarize_at(vars(ends_with("_voters")), list(~sum(.)))
+
+# Polling station returns
+f48_clean <- f48 %>%
+  mutate_at(
+    vars(total_votes, valid_votes, invalid_votes),
+    list(~{ifelse(. < 0, NA, .)})
+  ) %>%
+  mutate(
+    constituency_ps_id = paste0(constituency_id, "_", ps_id),
+    assembly = ifelse(grepl("^NA", constituency_id), "National", "Provincial"),
+    # There are 62 cases in which total_votes is missing
+    # but both valid_votes and invalid_votes exist
+    # In those cases we can just impute total votes
+    total_votes = case_when(
+      is.na(total_votes) & !is.na(valid_votes) & !is.na(invalid_votes) ~ valid_votes + invalid_votes,
+      TRUE ~ total_votes
+    ),
+    # Similarly other cases where the total and one of the other
+    # numbers is known, and we can fill in the third
+    valid_votes = case_when(
+      is.na(valid_votes) & !is.na(total_votes) & !is.na(invalid_votes) ~ total_votes - invalid_votes,
+      TRUE ~ valid_votes
+    ),
+    # There are two cases where total_votes is less than valid votes and invalid is missing
+    # This is clearly a mistake
+    invalid_votes = case_when(
+      is.na(invalid_votes) & !is.na(total_votes) & !is.na(valid_votes) & total_votes - valid_votes > 0 ~ total_votes - valid_votes,
+      TRUE ~ invalid_votes
+    ),
+    # Fix a typo
+    can_votes_11 = ifelse(constituency_ps_id == "NA79_50", can_votes_12, can_votes_11),
+    can_votes_12 = ifelse(constituency_ps_id == "NA79_50", can_votes_13, can_votes_12),
+    can_votes_13 = ifelse(constituency_ps_id == "NA79_50", can_votes_14, can_votes_13),
+    can_votes_14 = ifelse(constituency_ps_id == "NA79_50", can_votes_15, can_votes_14),
+    can_votes_15 = ifelse(constituency_ps_id == "NA79_50", NA, can_votes_15),
+  ) %>%
+  select(-assembly_type)
+
+# Check vote totals data
+f48 %>%
+  mutate_at(vars(ends_with("votes")), list(~case_when(. > 0 ~ 1, TRUE ~ .))) %>%
+  with(., table(valid_votes, invalid_votes, total_votes, useNA = "a"))
+
+with(
+  filter(f48, valid_votes >=  0 & invalid_votes >= 0),
+  table(valid_votes + invalid_votes == total_votes)
+)
+with(
+  filter(f48_clean, valid_votes >=  0 & invalid_votes >= 0),
+  table(valid_votes + invalid_votes == total_votes)
+)
+f48_clean %>%
+  mutate_at(vars(ends_with("votes")), list(~case_when(. > 0 ~ 1, TRUE ~ .))) %>%
+  with(., table(valid_votes, invalid_votes, total_votes, useNA = "a"))
+
+# Check constituency data
+names(f48_clean)
+f48_clean %>%
+  mutate_at(vars(starts_with("registered")), list(~case_when(. > 0 ~ 1, TRUE ~ .))) %>%
+  with(., table(registered_voters_male, registered_voters_female, registered_voters_total, useNA = "a"))
+
+f48_clean %>%
+  mutate_at(vars(starts_with("total_number")), list(~case_when(. > 0 ~ 1, TRUE ~ .))) %>%
+  with(., table(total_number_ps_female, total_number_ps_combined, total_number_ps_total, useNA = "a"))
+
+table(duplicated(f48_clean$constituency_ps_id))
+f48_long <- f48_clean %>%
+  select(constituency_id, constituency_ps_id, invalid_votes, valid_votes, total_votes, starts_with("can_")) %>%
+  gather(key, value, starts_with("can_")) %>%
+  mutate(key = gsub("can_", "", key)) %>%
+  separate(key, into = c("variable", "candidate_id")) %>%
+  spread(variable, value) 
+
+
+f48_merged_f49 <- f48_long %>%
+  filter(!(is.na(votes) & name == "")) %>%
+  mutate(
+    candidate_id = as.integer(candidate_id),
+    votes = as.integer(votes),
+    votes = ifelse(
+      votes < 0,
+      NA_integer_,
+      votes
+    )
+  ) %>%
+  left_join(
+    f49 %>%
+      mutate(
+        candidate_id = as.integer(candidate_id),
+        candidate_total_valid_votes_polled_49 = as.integer(gsub("\\*", "", valid_votes_polled)),
+        comments_49 = comments
+      ) %>%
+      select(constituency_id, candidate_id, party_affiliation, candidate_total_valid_votes_polled_49, comments_49)
+  )
+
+f48_long_clean <- f48_merged_f49 %>%
+  group_by(constituency_ps_id) %>%
+  mutate(
+    ps_valid_votes_summed = sum(ifelse(votes < 0, NA, votes)),
+    n_candidates = max(candidate_id)
+  ) %>%
+  group_by(constituency_id, candidate_id) %>%
+  mutate(
+    candidate_total_valid_votes_summed = sum(ifelse(votes < 0, NA, votes)),
+    candidate_valid_share = case_when(
+      votes < 0 | valid_votes < 0 ~ NA_real_,
+      TRUE ~ votes / valid_votes
+    ),
+    candidate_valid_share_of_summed = case_when(
+      votes < 0 | ps_valid_votes_summed < 0 ~ NA_real_,
+      TRUE ~ votes / ps_valid_votes_summed
+    )
+  ) %>%
+  rename(
+    candidate_votes = votes,
+    candidate_name = name,
+    candidate_party = party_affiliation
+  ) %>%
+  mutate_at(
+    vars(ends_with("voters"), ends_with("votes"), ends_with("_voters_total")),
+    as.integer
+  )
+
+f48_wide_w_long_vars <- f48_long_clean %>%
+  group_by(constituency_ps_id) %>%
+  summarize_at(vars(n_candidates, ps_valid_votes_summed), unique)
+# Don't use sum candidate votes because many missing polling stations!
+
+names(f48_long_clean)
+f48_wide_merge_from_long <- f48_long_clean %>%
+  ungroup() %>%
+  select(candidate_name, candidate_id, candidate_votes, candidate_party, candidate_valid_share, constituency_ps_id) %>%
+  gather(
+    key, val,
+    candidate_name, candidate_votes, candidate_party, candidate_valid_share
+  ) %>%
+  mutate(
+    key = paste0(gsub("_copy", "", key), "_", as.character(candidate_id))
+  ) %>%
+  select(-candidate_id) %>%
+  spread(key, val) %>%
+  mutate_at(vars(starts_with("candidate_valid_share")), as.numeric)
+
+# clean f45 data
+f45_clean <- f45 %>%
+  mutate(
+    constituency_ps_id = paste0(constituency_id, "_", ps_id)
+  ) %>%
+  select(-assembly_type)
+
+f45_merge <- f45_clean %>% 
+  select(-constituency_id, -ps_id) %>%
+  mutate(
+    total_turnout = case_when(
+      total_votes >= 0 & !is.na(total_votes) & (total_turnout < 0 | is.na(total_turnout)) ~ total_votes,
+      TRUE ~ total_turnout
+    )
+  ) %>%
+  rename_at(vars(-constituency_ps_id), list(~paste0(., "_45"))) %>%
+  mutate_at(vars(contains("turnout_45")), list(~ifelse(. < 0, NA, .))) %>%
+  select(-total_votes_45) %>%
+  rename_at(vars(ends_with("turnout_45")), list(~gsub("turnout", "votes", .)))
+
+f45_merge %>%
+  mutate_at(vars(ends_with("votes_45")), list(~case_when(. > 0 ~ 1, TRUE ~ .))) %>%
+  with(., table(total_female_votes_45, total_male_votes_45,total_votes_45, useNA = "a"))
+
+# Create final wide data
+f48_wide_ready <- f48_clean %>% 
+  select(-starts_with("can")) %>%
+  left_join(f48_wide_merge_from_long) %>%
+  left_join(f45_merge) %>%
+  left_join(f28_ps_level) %>%
+  left_join(f48_wide_w_long_vars) %>%
+  rename_at(
+    vars(starts_with("total_number_ps")),
+    list(~gsub("^total", "constituency", .))
+  ) %>%
+  rename_at(
+    vars(starts_with("registered_")),
+    list(~paste0("constituency_", .))
+  ) %>%
+  rename(constituency_id_NA = constituency_no_NA) %>%
+  mutate(
+    total_voters = ifelse(total_voters < 0, NA, total_voters),
+    turnout = ifelse(
+      total_votes < 0, 
+      total_votes, 
+      total_votes / total_voters
+    ),
+    turnout_45 = ifelse(
+      total_votes_45 < 0, 
+      total_votes_45, 
+      total_votes_45 / total_voters
+    ),
+    male_turnout_45 = ifelse(
+      total_male_votes_45 < 0,
+      total_male_votes_45, 
+      total_male_votes_45 / male_voters
+    ),
+    female_turnout_45 = ifelse(
+      total_female_votes_45 < 0,
+      total_female_votes_45, 
+      total_female_votes_45 / female_voters
+    )
+  ) %>%
+  mutate_at(
+    vars(contains("turnout")),
+    list(~{ifelse(is.infinite(.), NA, .)})
+  ) %>%
+  mutate_at(
+    vars(ends_with("voters"), ends_with("votes"), ends_with("_voters_total"), matches("votes_[0-9]{1,3}"),
+         ps_valid_votes_summed, n_candidates),
+    as.integer
+  ) %>%
+  mutate_at(
+    vars(female_voters, male_voters, total_male_votes_45, total_female_votes_45, female_turnout_45, male_turnout_45),
+    list(class = ~{
+      case_when(
+        . < 0 ~ "Neg",
+        . == 0 ~ "Zero",
+        . > 0 ~ "Pos"
+      )
+    })
+  ) %>%
+  mutate(
+    ps_gender_type = case_when(
+      male_voters_class == "Pos" & female_voters_class == "Pos" ~ "Combined",
+      male_voters_class == "Zero" & female_voters_class == "Pos" ~ "Female only",
+      male_voters_class == "Pos" & female_voters_class == "Zero" ~ "Male only",
+      TRUE ~ "Unknown"
+    )
+  ) %>%
+  mutate_at(
+    vars(total_female_votes_45, female_turnout_45, total_male_votes_45, total_female_votes_45, comments_45, total_votes_45),
+    list(~{ifelse(ps_gender_type != "Combined", NA, .)})
+  ) %>%
+  select(constituency_ps_id, province, assembly, constituency_id, constituency_name, constituency_id_NA, ps_id, ps_name, 
+         starts_with('constituency_number'), starts_with("constituency_registered_voters"), n_candidates,
+         male_voters, female_voters, total_voters,
+         valid_votes, invalid_votes, total_votes, turnout,
+         ps_valid_votes_summed,
+         total_male_votes_45, total_female_votes_45, total_votes_45,
+         male_turnout_45, female_turnout_45, turnout_45,
+         everything()) %>%
+  select(-province_45, -ends_with("_class"))
+
+write_csv(
+  f48_long_clean %>%
+    rename(
+      ps_invalid_votes = invalid_votes,
+      ps_valid_votes = valid_votes,
+      ps_total_votes = total_votes
+    ) %>%
+    select(constituency_id, constituency_ps_id, candidate_id, candidate_name,
+           candidate_party, candidate_votes,
+           candidate_valid_share, candidate_valid_share_of_summed,
+           candidate_total_valid_votes_summed, candidate_total_valid_votes_polled_49,
+           ps_invalid_votes, ps_valid_votes, ps_total_votes, ps_valid_votes_summed, n_candidates), 
+  path = "data/ps_data_long.csv"
+)
+write_csv(f48_wide_ready, path = "data/ps_data_wide.csv")
+
+# Many missing f45s
+length(setdiff(f48_clean$constituency_ps_id, f45_clean$constituency_ps_id))
+# Few missing f48s (for which f45s exist)
+length(setdiff(f45_clean$constituency_ps_id, f48_clean$constituency_ps_id))
+```

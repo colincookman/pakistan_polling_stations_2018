@@ -1,0 +1,453 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={Second Wave of RCons Data Cleaning},
+            pdfauthor={Luke Sonnet},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\newcommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{Second Wave of RCons Data Cleaning}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{Luke Sonnet}
+    \preauthor{\centering\large\emph}
+  \postauthor{\par}
+      \predate{\centering\large\emph}
+  \postdate{\par}
+    \date{2019-05-07}
+
+
+\begin{document}
+\maketitle
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(haven)}
+\KeywordTok{library}\NormalTok{(tidyverse)}
+\NormalTok{f28n <-}\StringTok{ }\KeywordTok{read_dta}\NormalTok{(}\StringTok{"source_data/rcons_data/Form_28_NA_List.dta"}\NormalTok{)}
+\NormalTok{f28p <-}\StringTok{ }\KeywordTok{read_dta}\NormalTok{(}\StringTok{"source_data/rcons_data/Form_28_PROVINCIAL_List.dta"}\NormalTok{)}
+\NormalTok{f45 <-}\StringTok{ }\KeywordTok{read_dta}\NormalTok{(}\StringTok{"source_data/rcons_data/Form_45_Male_Female_Turnout.dta"}\NormalTok{)}
+\NormalTok{f48 <-}\StringTok{ }\KeywordTok{read_dta}\NormalTok{(}\StringTok{"source_data/rcons_data/Form_48_ResultForm.dta"}\NormalTok{)}
+\NormalTok{f49 <-}\StringTok{ }\KeywordTok{read_dta}\NormalTok{(}\StringTok{"source_data/rcons_data/Form_49_Candidate_List.dta"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{form-28s}{%
+\section{Form 28s}\label{form-28s}}
+
+First, I will rowbind (append) the form 28s for the PAs and the form 28s
+for the NAs.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{f28 <-}\StringTok{ }\KeywordTok{bind_rows}\NormalTok{(}
+\NormalTok{  f28n }\OperatorTok{%>%}\StringTok{ }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{assembly =} \StringTok{"National"}\NormalTok{), }
+\NormalTok{  f28p }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{assembly =} \StringTok{"Provincial"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{    }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{assembly_type)}
+\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{constituency_ps_id =} \KeywordTok{paste0}\NormalTok{(constituency_id, }\StringTok{"_"}\NormalTok{, ps_id))}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{inconsistent-names-in-form-28s}{%
+\subsection{Inconsistent names in form
+28s}\label{inconsistent-names-in-form-28s}}
+
+RCONS FIX: There are some polling stations that have two names per
+polling station ID. Below I only print the few examples, but all of the
+errors are in ``f28\_ps\_name\_error.csv''. That file and the below data
+has the combinations of \texttt{constituency\_id} and \texttt{ps\_id}
+that have more than one \texttt{ps\_name} within the polling station ID,
+which should be impossible. Please check the entries for these polling
+stations to see what is wrong with the names. Some are clearly just
+typos, other's appear to be different names altogether.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ps_name_error <-}\StringTok{ }\NormalTok{f28 }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(constituency_id, ps_id, ps_name) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarize}\NormalTok{() }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(constituency_id, ps_id) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(}\KeywordTok{n}\NormalTok{() }\OperatorTok{>}\StringTok{ }\DecValTok{1}\NormalTok{)}
+\NormalTok{ps_name_error}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 284 x 3
+## # Groups:   constituency_id, ps_id [142]
+##    constituency_id ps_id ps_name                                           
+##    <chr>           <dbl> <chr>                                             
+##  1 NA1                21 Govt Middle School (GMS)                          
+##  2 NA1                21 Jinjirate Koh                                     
+##  3 NA1                34 Regional Institute for Teachers                   
+##  4 NA1                34 Training (RITT) Drosh                             
+##  5 NA1                58 Govt Girls Community Modle                        
+##  6 NA1                58 School (GGCMS) Sahan Payeen                       
+##  7 NA107             102 GOVT. REFORMER GIRLS HIGH SCHOOL, CHAK NO. 220/RB~
+##  8 NA107             102 GOVT. REFORMER GIRLS HIGH SCHOOL, CHAK NO. 220/RB~
+##  9 NA12              232 GovernmentPrimary School                          
+## 10 NA12              232 Toba Pashto                                       
+## # ... with 274 more rows
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{write_csv}\NormalTok{(ps_name_error, }\StringTok{"f28_ps_name_error.csv"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+RCONS FIX: There are some \texttt{constituency\_id} files that have
+different \texttt{constituency\_area} names. Some of these again are
+just typos, but others show bigger underlying problems with the data
+entry. Please check thoroughly and correct. This is all 10 of the errors
+(all the others are correct).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{electoral_name_error <-}\StringTok{ }\NormalTok{f28 }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(constituency_id, constituency_area) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarize}\NormalTok{() }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(constituency_id) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(}\KeywordTok{n}\NormalTok{() }\OperatorTok{>}\StringTok{ }\DecValTok{1}\NormalTok{)}
+\NormalTok{electoral_name_error}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 10 x 2
+## # Groups:   constituency_id [5]
+##    constituency_id constituency_area    
+##    <chr>           <chr>                
+##  1 NA58            RAWALPIDNI-II        
+##  2 NA58            RAWALPINDI-II        
+##  3 PP8             RAWALPINDI-III       
+##  4 PP8             RAWALPINDI-VII       
+##  5 PP99            BHAKKAR-III          
+##  6 PP99            FAISALABAD-III       
+##  7 PS48            MIRPURKHAS-II        
+##  8 PS48            MIRPURKHAS-II39603010
+##  9 PS67            (HYDERABAD-VI)       
+## 10 PS67            TANDO MUHAMMAD KHAN-I
+\end{verbatim}
+
+\hypertarget{mismatch-between-pa-and-na-polling-stations}{%
+\subsection{Mismatch between PA and NA polling
+stations}\label{mismatch-between-pa-and-na-polling-stations}}
+
+RCONS CHECK/FIX: There are some PA polling stations that correspond to
+multiple NA polling stations. Is this possible? Are there some PA
+polling stations that are used as multiple NA polling stations? This
+seems unlikely, so please check and report back. The file
+``f28\_ps\_id\_mismatch.csv'' has all of the PS polling stations which
+correspond to multiple NA polling station IDs, and I only print some
+examples below.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ps_id_mismatch <-}\StringTok{ }\NormalTok{f28 }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(constituency_id, ps_id, ps_id_NA) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarize}\NormalTok{() }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(constituency_id, ps_id) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(}\KeywordTok{n}\NormalTok{() }\OperatorTok{>}\StringTok{ }\DecValTok{1}\NormalTok{)}
+\NormalTok{ps_id_mismatch}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 688 x 3
+## # Groups:   constituency_id, ps_id [341]
+##    constituency_id ps_id ps_id_NA
+##    <chr>           <dbl>    <dbl>
+##  1 PB1               133      322
+##  2 PB1               133      323
+##  3 PB15               25       57
+##  4 PB15               25      212
+##  5 PB17               10      207
+##  6 PB17               10      208
+##  7 PB17               11      118
+##  8 PB17               11      209
+##  9 PB17               28      226
+## 10 PB17               28      227
+## # ... with 678 more rows
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{write_csv}\NormalTok{(ps_id_mismatch, }\StringTok{"f28_ps_id_mismatch.csv"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{form-45}{%
+\section{Form 45}\label{form-45}}
+
+First, I create a combo of \texttt{constituency\_id} and \texttt{ps\_id}
+to create a unique id for the polling station constituency combo.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{f45_clean <-}\StringTok{ }\NormalTok{f45 }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{constituency_ps_id =} \KeywordTok{paste0}\NormalTok{(constituency_id, }\StringTok{"_"}\NormalTok{, ps_id))}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{extra-missing-polling-station}{%
+\subsection{Extra, missing, polling
+station}\label{extra-missing-polling-station}}
+
+Then I show that there is one of these combos that isn't present in the
+form 28 data.
+
+RCONS FIX: The below polling station appears to be missing in the form
+28 data. When we look at the name, I think it should just be changed to
+\texttt{903} from \texttt{904} but please check and correct.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# There's an extra constituency_ps_id in form 45s}
+\KeywordTok{setdiff}\NormalTok{(f45_clean}\OperatorTok{$}\NormalTok{constituency_ps_id, f28}\OperatorTok{$}\NormalTok{constituency_ps_id)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "NA21_904"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{f45_clean }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(constituency_ps_id }\OperatorTok{==}\StringTok{ "NA21_904"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{as.data.frame}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   province     assembly_type constituency_id ps_id
+## 1      KPK National Assembly            NA21   904
+##                                                  ps_name total_votes
+## 1 GOVT. ELEMENTARY PRIMARY SCHOOL, SHAMILAT (P) COMBINED         145
+##   total_male_turnout total_female_turnout total_turnout comments
+## 1                669                  301           970         
+##   constituency_ps_id
+## 1           NA21_904
+\end{verbatim}
+
+\hypertarget{mismatched-totals}{%
+\subsection{Mismatched totals}\label{mismatched-totals}}
+
+RCONS CHECK: There are many instances with mismatched total turnout
+numbers, but most of these are commented by your staff as numbers that
+appeared incorrect in the original data. Only the two below entries have
+no entries for comment. Please check the source file and report back.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{f45 }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate_if}\NormalTok{(is.numeric, }\KeywordTok{list}\NormalTok{(}\OperatorTok{~}\KeywordTok{ifelse}\NormalTok{(. }\OperatorTok{<}\StringTok{ }\DecValTok{0}\NormalTok{, }\OtherTok{NA}\NormalTok{, .))) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{total_turnout_sum_check =}\NormalTok{ total_male_turnout }\OperatorTok{+}\StringTok{ }\NormalTok{total_female_turnout) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(total_turnout_sum_check }\OperatorTok{!=}\StringTok{ }\NormalTok{total_turnout, comments }\OperatorTok{==}\StringTok{ ""}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{as.data.frame}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   province     assembly_type constituency_id ps_id
+## 1   PUNJAB National Assembly            NA79   187
+## 2   PUNJAB Provincial Punjab           PP162   115
+##                                                              ps_name
+## 1            GOVERNMENT BOYS PRIMARY SCHOOL PANDORI KALAN (COMBINED)
+## 2 GOVT. GIRLS HIGH SCHOOL NISHAT COLONY LAHORE CANTT. (P) (COMBINED)
+##   total_votes total_male_turnout total_female_turnout total_turnout
+## 1        1265                675                  570          1265
+## 2         974                559                  353           952
+##   comments total_turnout_sum_check
+## 1                             1245
+## 2                              912
+\end{verbatim}
+
+\hypertarget{form-48}{%
+\section{Form 48}\label{form-48}}
+
+\hypertarget{inconsistent-data-within-polling-stations}{%
+\subsection{Inconsistent data within polling
+stations}\label{inconsistent-data-within-polling-stations}}
+
+Again, as with the Form 28s, there are some inconsistent data within
+polling stations.
+
+RCONS FIX: The following polling stations have different candidate names
+per candidate ID in the form 48 data. These are simple typos, but please
+correct them.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{f48 }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(constituency_id) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(constituency_id, }\KeywordTok{contains}\NormalTok{(}\StringTok{"can_name"}\NormalTok{)) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{gather}\NormalTok{(variable, name, }\OperatorTok{-}\NormalTok{constituency_id) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(constituency_id, variable, name) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarize}\NormalTok{() }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(constituency_id, variable) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(}\KeywordTok{n}\NormalTok{() }\OperatorTok{>}\StringTok{ }\DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 6 x 3
+## # Groups:   constituency_id, variable [3]
+##   constituency_id variable   name                   
+##   <chr>           <chr>      <chr>                  
+## 1 NA17            can_name_5 RIZWAN                 
+## 2 NA17            can_name_5 RIZWAN SAEED MUGHAL    
+## 3 NA40            can_name_4 SYED AKHUN SADA CHATTAN
+## 4 NA40            can_name_4 SYED AKHUN ZADA CHATTAN
+## 5 PP188           can_name_6 HAFIZ SHABAN AHMAD     
+## 6 PP188           can_name_6 HAFIZ SHABAN AHMED
+\end{verbatim}
+
+RCONS FIX: there also appears to be a problem with the variables for the
+total number of PS for NA 83.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{f48 }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(constituency_id) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(constituency_id, }\KeywordTok{starts_with}\NormalTok{(}\StringTok{"total_number"}\NormalTok{), }\KeywordTok{starts_with}\NormalTok{(}\StringTok{"registered_voters"}\NormalTok{), constituency_name) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{gather}\NormalTok{(variable, name, }\OperatorTok{-}\NormalTok{constituency_id) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(constituency_id, variable, name) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarize}\NormalTok{() }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(constituency_id, variable) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(}\KeywordTok{n}\NormalTok{() }\OperatorTok{>}\StringTok{ }\DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 4 x 3
+## # Groups:   constituency_id, variable [2]
+##   constituency_id variable                 name 
+##   <chr>           <chr>                    <chr>
+## 1 NA83            total_number_ps_combined -77  
+## 2 NA83            total_number_ps_combined -88  
+## 3 NA83            total_number_ps_total    75   
+## 4 NA83            total_number_ps_total    86
+\end{verbatim}
+
+\hypertarget{conclusion}{%
+\section{Conclusion}\label{conclusion}}
+
+Once the above are fixed, it should be easy for me to merge the data
+confidently and to check mismatches in vote totals and names across the
+different datasets. Please let us know when you can check the above!
+Thank you.
+
+
+\end{document}
