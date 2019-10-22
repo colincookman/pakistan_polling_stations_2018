@@ -1,0 +1,108 @@
+---
+title: "2018 Pakistani General Election: polling station wide data codebook"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# Note, must be evaluated locally, not at project level
+library(readr)
+library(codebook)
+
+knitr::opts_chunk$set(
+  echo = FALSE, 
+  fig.width = 4, 
+  fig.height = 4, 
+  fig.align = "center", 
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+## [Current .csv file](https://osf.io/69gpn/download) - v0.1
+
+### Changelog
+
+* [v0.1](https://osf.io/69gpn/download)
+  * First public release
+
+### Citation
+
+Sonnet, Luke. 2019. “2018 Pakistani General Election Polling Station Data.” https://doi.org/10.17605/osf.io/mtsnd.
+
+```{r}
+ps_data_wide <- read_csv("../data/ps_data_wide.csv")
+
+metadata(ps_data_wide)$name <- "2018 Pakistani General Elections Polling Station Level Data (wide)"
+metadata(ps_data_wide)$description <- paste0('
+### Overview
+
+These data are the official form 48s (polling station level returns by candidate) and the unofficial form 45s, from which we collect preliminary gender-based turnout. This should allow for analysis of gender-based turnout, even in combined polling stations. Note the form 45s uploaded by the ECP were not the final, official forms for the ratification of the election. Only the form 48s, which do not have gendered turnout, are considered official.
+
+Note that the release of these forms was *not* complete. Thus there is not complete coverage, and in some case the sum of the polling station totals is quite different from the reported constituency level returns. Furthermore, for some polling stations we only have form 45 data and for other polling stations we have only form 48 data (there are many missing form 45s).
+
+Unfortunately, there are several sources of missingness: (1) illegible forms, (2) unreleased forms, and (3) non-sensical data. For now, all are coded as `NA`.
+
+In some cases, some of the data differs across the two datasets. For that reason, and to clearly denote which form has which data, we append `_45` to data from the form 45s.
+
+### Variable summary
+
+* constituency_ps_id: the pasted together constituency_id and ps_id, a unique identifier of the constituency-polling station
+* province
+* assembly
+* constituency_id
+* constituency_name
+* constituency_id_NA: the corresponding national assembly constituency (for the provincial assemblies)
+* ps_id: the official serial number of the polling station
+* ps_name: the name of the polling station
+* ps_gender_type: our best guess about whether the polling station is female only, male only, or combined
+
+Some constituency level electoral data:
+
+* constituency_registered_voters_male
+* constituency_registered_voters_female
+* constituency_registered_voters_total
+* constituency_number_ps_male: number of male-only polling stations in the constituency
+* constituency_number_ps_female: number of female-only polling stations in the constituency
+* constituency_number_ps_combined: number of combined polling stations in the constituency
+* constituency_number_ps_total: total number of polling stations in the constituency
+* n_candidates: the number of candidate registered in this constituency
+
+Polling station level voting data:
+
+* male_voters, female_voters, total_voters: the total number of registered voters, merged from the form 28 polling station-electoral area data
+* invalid_votes, valid_votes, total_votes: the votes cast by category as recorded on the form 48s
+* turnout: `total_votes / total_voters`, the turnout comparing the registered voters on the form 28s to the number of votes on the form 48s
+* ps_valid_votes_summed: in most cases should be the same as `valid_votes`, but this comes from summing across the candidate votes (where none of them are missing), which in some cases is different from `valid_votes` where there are gaps in entry.
+* total_male_votes_45, total_female_votes_45, total_votes_45: total votes cast by gender from the form 45s; these are unofficial forms and may differ when summed from the `total_votes` column. They are only included for "Combined" polling stations; for female or male only polling stations, simply use the overall votes and turnout to look at gender-based turnout.
+* male_turnout_45, female_turnout_45, turnout_45: turnout as defined by the gendered vote totals over the form 28 number of registered voters of that gender (e.g. `total_female_votes_45 / male_voters`)
+
+Candidate level names, vote totals, parties, and vote share:
+
+The asterices represent which candidate id (in the long version of the data) we are referring to, and links the columns together.
+
+* candidate_name_*
+* candidate_votes_*
+* candidate_party_*
+* candidate_valid_share_*: This is defined as the candidate_votes over the `valid_votes` as found on the form 48s. Note there are some implausible outliers due to erroneous `valid_votes` totals.
+
+Other:
+
+* ps_name_45: preserved for the few mismatches in names across forms
+* comments, comments_45: comments by data entry operators about the data quality and matches across fields
+')
+metadata(ps_data_wide)$identifier <- "https://osf.io/mtsnd/"
+metadata(ps_data_wide)$datePublished <- "2019-10-21"
+metadata(ps_data_wide)$creator <- list(
+  "@type" = "Person",
+  givenName = "Luke", familyName = "Sonnet",
+  email = "luke.sonnet@gmail.com"
+)
+metadata(ps_data_wide)$citation <- "Sonnet, Luke. 2019. “2018 Pakistani General Election Polling Station Data.” https://doi.org/10.17605/osf.io/mtsnd."
+metadata(ps_data_wide)$url <- "https://osf.io/mtsnd/"
+```
+
+## Automatically generated codebook
+
+```{r}
+codebook(ps_data_wide, indent = "##", missingness_report = FALSE)
+```
