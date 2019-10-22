@@ -16,13 +16,14 @@ Sonnet, Luke. 2019. “2018 Pakistani General Election Polling Station Data.” 
   * All released for provincial and national assemblies
   * Multiple columns with candidate returns and polling station meta-data
   * This contains data from:
-    * ECP form 28 (e.g. registered voter totals)
-    * ECP form 48 (e.g. candidate-level returns, total turnout)
-    * ECP form 45 (e.g. unofficial gender-based turnout)
+    * ECP form 28 (e.g. registered voter totals), ([original links](https://www.ecp.gov.pk/frmGenericPage.aspx?PageID=3155), [backup](https://drive.google.com/drive/folders/129J6KaqN2J6wLu-ABjJUnPRAOwl0Ixrm))
+    * ECP form 48 (e.g. candidate-level returns, total turnout), ([original links](https://www.ecp.gov.pk/frmGenericPage.aspx?PageID=3223), [backup](https://drive.google.com/drive/folders/1mO-Wz6PvEA0QojpQm_4J9FNg0pkBKmEl))
+    * ECP form 45 (e.g. unofficial gender-based turnout), ([original links](https://www.ecp.gov.pk/frmGenericPage.aspx?PageID=3223), [backup](https://drive.google.com/drive/folders/1mO-Wz6PvEA0QojpQm_4J9FNg0pkBKmEl))
 * Polling station long data (~230MB, [.csv in OSF repository](https://osf.io/2sdzg/download), [documentation])
   * Each row is a polling station-candidate
   * Omits some polling station level data to save on space (can merge with the wide data if desired)
 * Electoral area (census block) data (~80MB, [.csv in OSF repository](https://osf.io/kmfh6/download), [documentation])
+  * Mostly from ECP form 28, linked above
   * Each row is a census block-polling station
   * Allows matching census blocks to polling stations
 
